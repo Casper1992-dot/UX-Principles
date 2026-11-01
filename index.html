@@ -1,0 +1,1178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teacher's Guide: Choosing a UX Framework</title>
+<style>
+  :root {
+    --ink: #0F172A; --muted: #475569; --bg: #FFFFFF; --surface: #F1F5F9; --raise: #FFFFFF; --hair: #CBD5E1;
+    --indigo: #4338CA; --indigo-tint: #E0E7FF; --teal: #0F766E; --teal-tint: #CCFBF1;
+    --coral: #C2410C; --coral-tint: #FFE4D6; --amber: #B45309; --amber-tint: #FEF3C7;
+    --frame: #1E293B; --flash: #FDE68A;
+    --chat-w: 400px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #E2E8F0; --muted: #94A3B8; --bg: #0B1220; --surface: #131C2E; --raise: #18233A; --hair: #26324A;
+      --indigo: #A5B4FC; --indigo-tint: #1E2350; --teal: #5EEAD4; --teal-tint: #0F2E2B;
+      --coral: #FDA47E; --coral-tint: #3A1E14; --amber: #FCD34D; --amber-tint: #33270C;
+      --frame: #64748B; --flash: #4C3D0A;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 Calibri, "Segoe UI", system-ui, -apple-system, sans-serif; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; border-radius: 4px; }
+
+  /* ---------- layout shell: side TOC uses spare width; chat docks on the right ---------- */
+  .shell { display: grid; grid-template-columns: minmax(0, 880px); justify-content: center; gap: 48px;
+    padding: 48px 16px 120px; transition: margin-right .25s ease; }
+  .toc-side { display: none; }
+  @media (min-width: 1280px) {
+    body:not(.chat-open) .shell { grid-template-columns: 210px minmax(0, 880px); }
+    body:not(.chat-open) .toc-side { display: block; }
+  }
+  @media (min-width: 1100px) { body.chat-open .shell { margin-right: var(--chat-w); } }
+  @media (min-width: 1560px) {
+    body.chat-open .shell { grid-template-columns: 210px minmax(0, 880px); }
+    body.chat-open .toc-side { display: block; }
+  }
+  .toc-side nav { position: sticky; top: 32px; font-size: 14px; }
+  .toc-side .eyebrow { margin-bottom: 10px; }
+  .toc-side a { display: block; padding: 5px 10px; border-left: 2px solid var(--hair); color: var(--muted); text-decoration: none; }
+  .toc-side a:hover { color: var(--ink); }
+  .toc-side a.active { color: var(--indigo); border-left-color: var(--indigo); font-weight: 700; }
+  .toc-side a.sub { padding-left: 22px; font-size: 13px; }
+
+  h1, h2, h3, h4 { font-family: Cambria, Georgia, "Times New Roman", serif; line-height: 1.2; margin: 0; }
+  h1 { font-size: clamp(30px, 5vw, 42px); }
+  h2 { font-size: 28px; margin-bottom: 6px; }
+  h3 { font-size: 19px; margin: 26px 0 8px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--indigo); margin-bottom: 8px; }
+  .lede { font-size: 19px; color: var(--muted); margin-top: 12px; max-width: 720px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chip { font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--indigo-tint); color: var(--indigo); }
+  nav.inline { margin: 32px 0 8px; padding: 16px 20px; background: var(--surface); border-radius: 12px; }
+  nav.inline ol { margin: 6px 0 0; columns: 2; column-gap: 32px; }
+  @media (max-width: 640px) { nav.inline ol { columns: 1; } }
+  @media (min-width: 1280px) { body:not(.chat-open) nav.inline { display: none; } }
+  @media (min-width: 1560px) { nav.inline { display: none; } }
+  nav.inline a { color: var(--ink); text-decoration: none; }
+  nav.inline a:hover { color: var(--indigo); text-decoration: underline; }
+  section { margin-top: 56px; scroll-margin-top: 16px; }
+  .card { background: var(--surface); border-radius: 12px; padding: 18px 20px; margin: 14px 0; }
+  .callout { border-radius: 12px; padding: 14px 18px; margin: 14px 0; background: var(--indigo-tint); }
+  .callout strong:first-child { color: var(--indigo); }
+  .note { font-size: 14px; color: var(--muted); border: 1px dashed var(--hair); border-radius: 10px; padding: 10px 14px; margin-top: 16px; }
+  .say { font-family: Cambria, Georgia, serif; font-size: 18px; font-style: italic; }
+  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; counter-reset: step; }
+  .flow div { background: var(--surface); border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 700; }
+  .flow div::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center;
+    width: 24px; height: 24px; border-radius: 50%; background: var(--indigo); color: var(--bg); font-size: 12px; margin-bottom: 6px; }
+  .flow div.hl::before { background: var(--coral); }
+  @media (max-width: 640px) { .flow { grid-template-columns: 1fr; } }
+  .type-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .need .dot { background: var(--teal); } .usab .dot { background: var(--indigo); } .eng .dot { background: var(--coral); }
+  .need .eyebrow { color: var(--teal); } .usab .eyebrow { color: var(--indigo); } .eng .eyebrow { color: var(--coral); }
+  .need .callout { background: var(--teal-tint); } .need .callout strong:first-child { color: var(--teal); }
+  .eng .callout { background: var(--coral-tint); } .eng .callout strong:first-child { color: var(--coral); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* framework cards */
+  .fw { border: 1px solid var(--hair); border-radius: 14px; padding: 18px 20px; margin: 16px 0; scroll-margin-top: 16px; }
+  .fw-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .fw h4 { font-size: 19px; }
+  .ask { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--indigo);
+    background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+  .ask:hover { background: var(--indigo-tint); border-color: transparent; }
+  .ask svg { width: 14px; height: 14px; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .ex { background: var(--surface); border-radius: 12px; padding: 14px 16px; margin: 12px 0 4px; }
+  .ex .label { color: var(--indigo); }
+  .need .ex .label { color: var(--teal); } .eng .ex .label { color: var(--coral); }
+  .ex p:last-child { margin-bottom: 0; }
+
+  .warn { background: var(--amber-tint); border-radius: 12px; padding: 14px 18px; margin: 14px 0; }
+  .warn strong:first-child { color: var(--amber); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 12px 0; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--hair); }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .tablewrap { overflow-x: auto; }
+  details { background: var(--surface); border-radius: 10px; padding: 12px 16px; margin: 10px 0; }
+  summary { cursor: pointer; font-weight: 700; }
+  details p { margin: 10px 0 0; }
+  .tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+  .tag.need { background: var(--teal-tint); color: var(--teal); }
+  .tag.usab { background: var(--indigo-tint); color: var(--indigo); }
+  .tag.eng { background: var(--coral-tint); color: var(--coral); }
+  .time { font-weight: 700; color: var(--indigo); white-space: nowrap; }
+  footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--hair); color: var(--muted); font-size: 14px; }
+  .flash { animation: flash 1.8s ease; }
+  @keyframes flash { 0%, 40% { box-shadow: 0 0 0 4px var(--flash); background-color: var(--flash); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+  /* ---------- mockups (screens stay light, like real devices) ---------- */
+  figure.mock { margin: 14px 0 4px; }
+  figure.mock figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .pair { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .pair > div { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .verdict { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 10px; border-radius: 999px; }
+  .verdict.bad { background: var(--coral-tint); color: var(--coral); }
+  .verdict.good { background: var(--teal-tint); color: var(--teal); }
+  .phone { width: 196px; height: 360px; border: 3px solid var(--frame); border-radius: 28px; padding: 14px 10px 12px; background: #fff;
+    color: #0F172A; font-size: 11px; line-height: 1.35; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden; }
+  .phone::before { content: ""; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 48px; height: 5px; border-radius: 4px; background: #CBD5E1; }
+  .phone .top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 12px; margin-top: 4px; }
+  .phone .muted { color: #64748B; }
+  .phone .row { display: flex; align-items: center; justify-content: space-between; gap: 6px; border: 1px solid #E2E8F0; border-radius: 8px; padding: 5px 7px; }
+  .phone .row.sel { border-color: #4338CA; background: #EEF2FF; }
+  .phone .radio { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #94A3B8; flex: none; }
+  .phone .row.sel .radio { border: 3px solid #4338CA; }
+  .phone .field { border: 1px solid #CBD5E1; border-radius: 6px; padding: 5px 7px; color: #94A3B8; }
+  .phone .field.err { border-color: #DC2626; color: #DC2626; }
+  .phone .field.ok { border-color: #0F766E; color: #0F172A; }
+  .phone .hint { font-size: 10px; }
+  .phone .hint.err { color: #DC2626; } .phone .hint.ok { color: #0F766E; }
+  .phone .btn { background: #4338CA; color: #fff; border-radius: 8px; text-align: center; padding: 8px; font-weight: 700; }
+  .phone .btn.small { display: inline-block; padding: 3px 8px; font-size: 10px; border-radius: 6px; }
+  .phone .btn.ghost { background: #F1F5F9; color: #475569; }
+  .phone .sticky { margin-top: auto; }
+  .phone .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .phone .chips span { border: 1px solid #CBD5E1; border-radius: 999px; padding: 2px 7px; font-size: 10px; }
+  .phone .chips span.on { background: #4338CA; color: #fff; border-color: #4338CA; }
+  .phone .img { background: #E2E8F0; border-radius: 8px; height: 70px; }
+  .phone .line { height: 6px; background: #E2E8F0; border-radius: 3px; }
+  .phone .center { text-align: center; }
+  .phone .big { font-size: 20px; font-weight: 800; }
+  .phone .step { display: flex; gap: 8px; align-items: flex-start; }
+  .phone .step i { width: 10px; height: 10px; border-radius: 50%; background: #0F766E; flex: none; margin-top: 2px; }
+  .phone .step.now i { background: #4338CA; box-shadow: 0 0 0 3px #C7D2FE; }
+  .phone .step.next i { background: #CBD5E1; }
+  .phone .notif { background: #F1F5F9; border-radius: 10px; padding: 7px 8px; display: flex; gap: 7px; }
+  .phone .appicon { width: 22px; height: 22px; border-radius: 6px; background: #0F766E; flex: none; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 11px; }
+  .phone .modal { position: absolute; inset: 0; background: rgba(15,23,42,.45); display: grid; place-items: center; padding: 12px; }
+  .phone .modal > div { background: #fff; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .phone .bar { display: flex; gap: 4px; align-items: flex-end; height: 40px; }
+  .phone .bar span { flex: 1; background: #C7D2FE; border-radius: 3px 3px 0 0; }
+  .phone .bar span.today { background: #C2410C; }
+  .phone .tick { width: 54px; height: 54px; border-radius: 50%; background: #0F766E; color: #fff; display: grid; place-items: center; font-size: 28px; margin: 6px auto; }
+  .phone .confetti { position: absolute; width: 6px; height: 10px; border-radius: 2px; }
+  .phone .toolbar { margin-top: auto; display: flex; justify-content: space-around; border-top: 1px solid #E2E8F0; padding-top: 6px; color: #94A3B8; }
+  .portal { font-size: 9px; }
+  .portal .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .portal .cols div { background: #F1F5F9; border-radius: 4px; padding: 3px 4px; }
+
+  .svgfig { width: 100%; max-width: 620px; height: auto; display: block; }
+  .svgfig text { font: 12px Calibri, "Segoe UI", system-ui, sans-serif; fill: var(--ink); }
+  .svgfig .mutedtxt { fill: var(--muted); }
+  .svgfig .axis { stroke: var(--hair); stroke-width: 1.5; fill: none; }
+  .svgfig .curve { stroke: var(--indigo); stroke-width: 3; fill: none; }
+  .svgfig .curve.coral { stroke: var(--coral); }
+  .svgfig .curve.teal { stroke: var(--teal); }
+  .svgfig .dash { stroke: var(--muted); stroke-dasharray: 4 4; fill: none; }
+  .svgfig .pt { fill: var(--coral); }
+  .svgfig .pt.good { fill: var(--teal); }
+  .svgfig .node { fill: var(--surface); stroke: var(--coral); stroke-width: 2; }
+  .svgfig .bold { font-weight: 700; }
+  .empathy { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 620px; }
+  .empathy div { background: var(--surface); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .empathy b { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--teal); }
+  .jobcard { max-width: 620px; border: 2px dashed var(--teal); border-radius: 12px; padding: 14px 16px; font-family: Cambria, Georgia, serif; font-size: 17px; }
+  .jobcard b { color: var(--teal); font-family: Calibri, system-ui, sans-serif; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+
+  /* ---------- chat launcher ---------- */
+  .launcher { position: fixed; right: 20px; bottom: 20px; z-index: 40; display: inline-flex; align-items: center; gap: 10px;
+    background: var(--indigo); color: var(--bg); border: 0; border-radius: 999px; padding: 12px 18px 12px 14px; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .25); font-weight: 700; transition: padding .2s ease, transform .2s ease; }
+  .launcher:hover { transform: translateY(-2px); }
+  .launcher svg { width: 22px; height: 22px; flex: none; }
+  .launcher .lbl { white-space: nowrap; overflow: hidden; max-width: 160px; transition: max-width .2s ease, opacity .2s ease; }
+  .launcher kbd { font: 700 11px ui-monospace, Menlo, monospace; border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; opacity: .7; }
+  .launcher.compact { padding: 12px; }
+  .launcher.compact .lbl, .launcher.compact kbd { max-width: 0; opacity: 0; padding: 0; border: 0; margin-left: -10px; }
+  .launcher.compact:hover .lbl { max-width: 160px; opacity: 1; margin-left: 0; }
+  body.chat-open .launcher { display: none; }
+
+  /* ---------- chat panel: docked column on desktop, bottom sheet on mobile ---------- */
+  .chat { position: fixed; z-index: 50; display: flex; flex-direction: column; background: var(--raise); color: var(--ink); visibility: hidden; }
+  @media (min-width: 1100px) {
+    .chat { top: 0; right: 0; bottom: 0; width: var(--chat-w); border-left: 1px solid var(--hair); transform: translateX(100%); transition: transform .25s ease, visibility .25s; }
+    body.chat-open .chat { transform: none; visibility: visible; }
+    .scrim { display: none; }
+  }
+  @media (max-width: 1099.98px) {
+    .chat { left: 0; right: 0; bottom: 0; height: min(82vh, 720px); border-radius: 18px 18px 0 0; box-shadow: 0 -12px 40px rgba(15,23,42,.3);
+      transform: translateY(100%); transition: transform .25s ease, visibility .25s; }
+    body.chat-open .chat { transform: none; visibility: visible; }
+    .chat::before { content: ""; width: 40px; height: 4px; border-radius: 4px; background: var(--hair); margin: 8px auto 0; flex: none; }
+    .scrim { position: fixed; inset: 0; z-index: 45; background: rgba(15, 23, 42, .4); opacity: 0; pointer-events: none; transition: opacity .25s; }
+    body.chat-open .scrim { opacity: 1; pointer-events: auto; }
+  }
+  .chat-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--hair); flex: none; }
+  .chat-head .av { width: 32px; height: 32px; border-radius: 50%; background: var(--indigo-tint); color: var(--indigo); display: grid; place-items: center; flex: none; }
+  .chat-head .av svg { width: 18px; height: 18px; }
+  .chat-head .ttl { flex: 1; min-width: 0; }
+  .chat-head .ttl b { display: block; font-size: 15px; }
+  .chat-head .ttl span { font-size: 12px; color: var(--muted); }
+  .iconbtn { width: 34px; height: 34px; border-radius: 8px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--muted); }
+  .iconbtn:hover { background: var(--surface); color: var(--ink); }
+  .iconbtn svg { width: 18px; height: 18px; }
+  .log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; overscroll-behavior: contain; }
+  .msg { max-width: 92%; font-size: 15px; line-height: 1.5; }
+  .msg.user { align-self: flex-end; background: var(--indigo); color: var(--bg); padding: 9px 13px; border-radius: 14px 14px 4px 14px; }
+  .msg.bot { align-self: flex-start; background: var(--surface); padding: 12px 14px; border-radius: 14px 14px 14px 4px; }
+  .msg.bot .src { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--indigo); margin-bottom: 4px; }
+  .msg.bot p { margin: 0 0 8px; }
+  .msg.bot p:last-child { margin-bottom: 0; }
+  .msg.bot mark { background: var(--flash); color: inherit; border-radius: 3px; padding: 0 2px; }
+  .msg.bot .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pill { border: 1px solid var(--hair); background: var(--raise); border-radius: 999px; padding: 4px 10px; font-size: 13px; cursor: pointer; text-align: left; }
+  .pill:hover { border-color: var(--indigo); color: var(--indigo); }
+  .pill.primary { background: var(--indigo); color: var(--bg); border-color: var(--indigo); font-weight: 700; }
+  .pill.primary:hover { color: var(--bg); opacity: .9; }
+  .diag { border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; font-size: 14px; }
+  .diag.need { background: var(--teal-tint); } .diag.usab { background: var(--indigo-tint); } .diag.eng { background: var(--coral-tint); }
+  .welcome h3 { margin: 4px 0 6px; font-size: 18px; }
+  .welcome p { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+  .sugg { display: flex; flex-direction: column; gap: 6px; }
+  .compose { flex: none; border-top: 1px solid var(--hair); padding: 10px 12px 12px; }
+  .compose form { display: flex; align-items: flex-end; gap: 8px; background: var(--surface); border-radius: 12px; padding: 6px 6px 6px 12px; border: 1px solid transparent; }
+  .compose form:focus-within { border-color: var(--indigo); }
+  .compose textarea { flex: 1; resize: none; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 15px; line-height: 1.4; max-height: 120px; padding: 6px 0; outline: none; }
+  .send { width: 36px; height: 36px; border-radius: 9px; border: 0; background: var(--indigo); color: var(--bg); display: grid; place-items: center; cursor: pointer; flex: none; }
+  .send:disabled { opacity: .4; cursor: default; }
+  .send svg { width: 18px; height: 18px; }
+  .compose small { display: block; font-size: 11px; color: var(--muted); margin-top: 6px; padding-left: 4px; }
+  .typing { display: inline-flex; gap: 4px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes blink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+  @media print {
+    :root { --bg: #fff; --ink: #000; }
+    body { font-size: 12pt; }
+    .shell { display: block; padding: 0; margin: 0 !important; }
+    .toc-side, nav.inline, .launcher, .chat, .scrim, .ask { display: none !important; }
+    section { page-break-before: always; margin-top: 0; }
+    .fw, details, figure { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="toc-side" aria-label="On this page">
+    <nav>
+      <div class="eyebrow">On this page</div>
+      <a href="#goals">Learning goals</a>
+      <a href="#plan">Session plan</a>
+      <a href="#core">The core idea</a>
+      <a href="#need">Need problems</a>
+      <a class="sub" href="#fw-jtbd">Jobs-to-be-Done</a>
+      <a class="sub" href="#fw-dt">Design Thinking</a>
+      <a class="sub" href="#fw-journey">Journey mapping</a>
+      <a href="#usability">Usability problems</a>
+      <a class="sub" href="#fw-nielsen">Nielsen's heuristics</a>
+      <a class="sub" href="#fw-hick">Hick's Law</a>
+      <a class="sub" href="#fw-fitts">Fitts's Law &amp; hierarchy</a>
+      <a href="#engagement">Engagement problems</a>
+      <a class="sub" href="#fw-hook">Hook Model</a>
+      <a class="sub" href="#fw-fogg">Fogg (B = MAP)</a>
+      <a class="sub" href="#fw-peak">Peak-End Rule</a>
+      <a href="#compare">Comparison</a>
+      <a href="#exercise">Class exercise</a>
+      <a href="#traps">Misdiagnosis traps</a>
+      <a href="#qa">Student questions</a>
+    </nav>
+  </aside>
+
+<main>
+<header>
+  <div class="eyebrow">Teacher's guide · Wireframes &amp; Prototyping · Slide 14</div>
+  <h1>Choosing a UX Framework</h1>
+  <p class="lede">How to teach the three problem types (need, usability and engagement) so students learn to diagnose a problem before picking a principle. Each framework comes with an industry example and, where it helps, a mockup.</p>
+  <div class="meta">
+    <span class="chip">DPM Cohort, IIM Visakhapatnam</span>
+    <span class="chip">About 25 minutes</span>
+    <span class="chip">Facilitator: Rajdip Sengupta</span>
+  </div>
+  <p class="note">Industry examples are well-known public case studies, simplified for teaching. Mockups are generic illustrations, not screenshots of the products named. Check specific figures before quoting them in class.</p>
+</header>
+
+<nav class="inline" aria-label="Contents">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#goals">Learning goals</a></li>
+    <li><a href="#plan">Session plan</a></li>
+    <li><a href="#core">The core idea</a></li>
+    <li><a href="#need">Need problems</a></li>
+    <li><a href="#usability">Usability problems</a></li>
+    <li><a href="#engagement">Engagement problems</a></li>
+    <li><a href="#compare">Side-by-side comparison</a></li>
+    <li><a href="#exercise">Class exercise with answers</a></li>
+    <li><a href="#traps">Misdiagnosis traps</a></li>
+    <li><a href="#qa">Likely student questions</a></li>
+  </ol>
+</nav>
+
+<section id="goals">
+  <div class="eyebrow">01</div>
+  <h2>Learning goals</h2>
+  <div class="kb" data-title="Learning goals">
+  <p>By the end of this segment, students should be able to:</p>
+  <ol>
+    <li>Turn a vague complaint ("the feature isn't working") into a <strong>user-behaviour symptom</strong>.</li>
+    <li>Classify that symptom as a <strong>need</strong>, <strong>usability</strong> or <strong>engagement</strong> problem.</li>
+    <li>Name two or three frameworks that suit each type, and explain why.</li>
+    <li>Choose the right <strong>prototype fidelity</strong> and <strong>success metric</strong> for the problem type.</li>
+  </ol>
+  </div>
+</section>
+
+<section id="plan">
+  <div class="eyebrow">02</div>
+  <h2>Session plan</h2>
+  <div class="tablewrap kb" data-title="Session plan and timing">
+  <table>
+    <tr><th>Time</th><th>Activity</th><th>Notes</th></tr>
+    <tr><td class="time">3 min</td><td>Hook: "What's wrong with this app?"</td><td>Show a familiar app problem (e.g. cart abandonment). Collect 3–4 guesses. Most will jump straight to solutions; point that out.</td></tr>
+    <tr><td class="time">4 min</td><td>The core idea and the 5-step flow</td><td>Walk the chevrons on the slide. Stress step 2: diagnosis.</td></tr>
+    <tr><td class="time">9 min</td><td>The three problem types</td><td>About 3 minutes each: symptom → question → frameworks → industry example.</td></tr>
+    <tr><td class="time">7 min</td><td>Class exercise</td><td>Pairs classify 6 scenarios (section 08). Debrief the answers.</td></tr>
+    <tr><td class="time">2 min</td><td>Wrap-up</td><td>"Diagnose before you prescribe." Link to the next slide (UX components).</td></tr>
+  </table>
+  </div>
+</section>
+
+<section id="core">
+  <div class="eyebrow">03</div>
+  <h2>The core idea</h2>
+  <div class="kb" data-title="The core idea: diagnose before you prescribe">
+  <p class="say">"Don't start with a principle. Start with the symptom, diagnose the type of problem, then pick the lens."</p>
+  <p>Teams often reach for a favourite tool (say, "let's gamify it") before they know what's actually wrong. Every UX framework answers a different question, and using one on the wrong problem wastes the prototype, the sprint and the user's patience. The five steps are: observe the symptom, diagnose the problem type, pick the UX principle, prototype at the right fidelity, then measure and iterate.</p>
+  </div>
+  <div class="flow" aria-hidden="true">
+    <div>Observe the symptom</div>
+    <div>Diagnose the problem type</div>
+    <div class="hl">Pick the UX principle</div>
+    <div>Prototype at the right fidelity</div>
+    <div>Measure and iterate</div>
+  </div>
+  <div class="callout kb" data-title="Diagnostic order: need, then usability, then engagement"><strong>Teaching tip:</strong> Ask the three diagnostic questions in order. If the answer to the first is "no", stop there; there's no point fixing usability for a product nobody needs.
+    <ol style="margin-top:8px">
+      <li><strong>Need:</strong> Do users actually want this? Are we solving the right problem?</li>
+      <li><strong>Usability:</strong> If they want it, can they complete the task easily?</li>
+      <li><strong>Engagement:</strong> If they can, do they come back?</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ======================= NEED ======================= -->
+<section id="need" class="need" data-type="need">
+  <div class="eyebrow">04 · Problem type 1</div>
+  <div class="type-head"><span class="dot"></span><h2>Need problem</h2></div>
+  <p class="say">"We aren't sure what users really want."</p>
+
+  <div class="kb" data-title="Need problem: what it is">
+  <h3>What it is</h3>
+  <p>A need problem means the product or feature doesn't match a real job the user is trying to get done. The interface may be perfectly usable, but the value isn't there. This is the most expensive problem to discover late, because it means the wrong thing was built.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card kb" data-title="Need problem: signals in the data">
+      <h3 style="margin-top:0">Signals in the data</h3>
+      <ul>
+        <li>Low adoption even among users who saw or tried the feature</li>
+        <li>Users find workarounds (Excel, WhatsApp) instead of the feature</li>
+        <li>Feature requests that contradict each other</li>
+        <li>Training and announcements don't move adoption; nobody uses it</li>
+      </ul>
+    </div>
+    <div class="card kb" data-title="Need problem: what users say">
+      <h3 style="margin-top:0">What users say</h3>
+      <ul>
+        <li>"Nice, but I don't really need it."</li>
+        <li>"I already do this another way."</li>
+        <li>"Can it also do X?" (X being something entirely different)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Frameworks to use</h3>
+
+  <article class="fw" id="fw-jtbd">
+    <div class="fw-head"><h4>Jobs-to-be-Done (JTBD)</h4><button class="ask" data-q="Explain Jobs-to-be-Done with an industry example">Ask</button></div>
+    <div class="kb" data-title="Jobs-to-be-Done (JTBD)">
+      <p>Jobs-to-be-Done says users "hire" a product to make progress in a specific situation. Focus on the job, not on features or demographics. The competition is anything else the user could hire for the same job.</p>
+      <p><span class="label">How to apply:</span> Write a job statement: <em>"When [situation], I want to [motivation], so I can [outcome]."</em> Interview users about the last time they did the job, and what they "fired" in order to hire your product.</p>
+    </div>
+    <div class="ex kb" data-title="Jobs-to-be-Done: industry example (the milkshake study)">
+      <div class="label">In industry · The milkshake study</div>
+      <p>Clayton Christensen's team helped a fast-food chain that wanted to sell more milkshakes. Surveys on flavour and price didn't move sales. Watching buyers did: a large share of shakes were bought early in the morning by commuters driving alone. They "hired" the shake to make a long, boring drive more interesting and stay full until lunch. Its real competitors were bananas, bagels and boredom, not other shakes. The fix was a thicker shake that lasts the whole commute and a faster way to buy it.</p>
+      <p><strong>Classroom bridge:</strong> A B2B procurement tool built a rich catalogue, but buyers' real job was "get purchases approved before quarter-end without chasing managers." The answer was an approval workflow, not a better catalogue.</p>
+    </div>
+    <figure class="mock">
+      <div class="jobcard"><b>Job story</b>When I'm <u>starting a long, boring commute alone</u>, I want <u>something filling I can consume one-handed</u>, so I can <u>stay entertained and not be hungry by 10 a.m.</u></div>
+      <figcaption>Job story format: situation, motivation, outcome. Notice that it says nothing about milkshakes.</figcaption>
+    </figure>
+  </article>
+
+  <article class="fw" id="fw-dt">
+    <div class="fw-head"><h4>Design Thinking (Empathise → Define)</h4><button class="ask" data-q="Explain Design Thinking empathise and define with an industry example">Ask</button></div>
+    <div class="kb" data-title="Design Thinking (Empathise and Define)">
+      <p>Design Thinking has five stages: Empathise, Define, Ideate, Prototype, Test. For a need problem, the first two matter most: understand users deeply, then state the problem sharply before generating ideas.</p>
+      <p><span class="label">How to apply:</span> Observe users in context (shadowing, interviews), build an empathy map of what they say, think, do and feel, then write a "How might we…" problem statement.</p>
+    </div>
+    <div class="ex kb" data-title="Design Thinking: industry example (GE Healthcare MRI Adventure Series, Airbnb)">
+      <div class="label">In industry · GE Healthcare's MRI "Adventure Series"</div>
+      <p>Doug Dietz, a GE designer, saw a frightened child crying on her way into an MRI scanner he had designed. Many young children needed sedation to stay still for scans. Instead of re-engineering the machine, the team spent time with children and hospital staff and reframed the problem: "How might we make the scan feel like an adventure?" Scan rooms were redesigned as pirate ships and jungle trips, with scripts for staff. Hospitals reported far fewer children needing sedation.</p>
+      <p><strong>Also:</strong> In Airbnb's early days, the founders visited New York hosts and noticed most listings had poor photos. They took professional photos themselves, and bookings in the city rose sharply. That insight came from empathy work, not from data.</p>
+    </div>
+    <figure class="mock">
+      <div class="empathy">
+        <div><b>Says</b>"Will it hurt? I want my mum."</div>
+        <div><b>Thinks</b>The machine is a big, loud, scary tunnel.</div>
+        <div><b>Does</b>Cries, won't lie still, needs sedation.</div>
+        <div><b>Feels</b>Afraid, alone, out of control.</div>
+      </div>
+      <figcaption>Empathy map for a child about to have an MRI scan. Define: "How might we make the scan feel like an adventure, not a medical test?"</figcaption>
+    </figure>
+  </article>
+
+  <article class="fw" id="fw-journey">
+    <div class="fw-head"><h4>User journey mapping</h4><button class="ask" data-q="Explain user journey mapping with an industry example">Ask</button></div>
+    <div class="kb" data-title="User journey mapping">
+      <p>A user journey map shows every stage of the user's experience toward a goal: actions, thoughts, emotions and touchpoints, including the parts outside your product.</p>
+      <p><span class="label">How to apply:</span> Draw the stages left to right and plot the emotion curve. The lowest points are where the unmet need sits, and often they aren't on any screen you own.</p>
+    </div>
+    <div class="ex kb" data-title="Journey mapping: industry example (Disney MagicBand)">
+      <div class="label">In industry · Disney's MagicBand</div>
+      <p>Mapping a theme-park visit end to end showed that the pain wasn't the rides. It was the friction between them: tickets at the gate, room keys at the hotel, wallets at every shop, long queues. Disney's answer was the MagicBand, one wristband that works as park ticket, hotel room key, payment method and ride-reservation pass. The low points on the map became the product.</p>
+      <p><strong>Classroom bridge:</strong> Map a home-loan journey and the biggest pain point is collecting documents across several offices, not the app. The opportunity is document pickup, not a nicer form.</p>
+    </div>
+    <figure class="mock">
+      <svg class="svgfig" viewBox="0 0 620 220" role="img" aria-label="Emotion curve across a theme-park visit: low at entry, queues and payment; high on rides">
+        <line class="axis" x1="40" y1="20" x2="40" y2="170"/><line class="axis" x1="40" y1="110" x2="600" y2="110"/>
+        <text x="34" y="30" class="mutedtxt" text-anchor="end">Happy</text><text x="34" y="168" class="mutedtxt" text-anchor="end">Upset</text>
+        <path class="curve" d="M70 70 C 120 70, 130 150, 170 150 S 240 50, 270 55 S 330 160, 370 160 S 430 40, 470 45 S 520 140, 560 135"/>
+        <circle class="pt" cx="170" cy="150" r="6"/><circle class="pt" cx="370" cy="160" r="6"/><circle class="pt" cx="560" cy="135" r="6"/>
+        <g text-anchor="middle">
+          <text x="70" y="195">Plan</text><text x="170" y="195">Gate / tickets</text><text x="270" y="195">First ride</text>
+          <text x="370" y="195">Queue &amp; pay</text><text x="470" y="195">Parade</text><text x="560" y="195">Hotel check-in</text>
+        </g>
+        <text x="170" y="142" text-anchor="middle" class="bold" dy="-14">Pain</text>
+        <text x="370" y="152" text-anchor="middle" class="bold" dy="-14">Pain</text>
+        <text x="560" y="127" text-anchor="middle" class="bold" dy="-14">Pain</text>
+      </svg>
+      <figcaption>Journey map emotion curve. Each red dip (tickets, payment, room key) is a job one wristband can take over.</figcaption>
+    </figure>
+  </article>
+
+  <div class="kb" data-title="Need problem: prototype fidelity and metrics">
+  <h3>Prototype fidelity</h3>
+  <p>For a need problem use <strong>low fidelity</strong>: paper sketches, storyboards, low-fi wireframes, even a fake landing page ("fake door") or a "concierge" test where you do the job manually for a few users. You're testing the <em>value</em>, so polish distracts.</p>
+  <h3>Metrics to watch</h3>
+  <ul>
+    <li>Interest or intent: sign-ups on a fake-door test, willingness to pay</li>
+    <li>Problem validation: how many interviewed users describe the same pain unprompted</li>
+    <li>Adoption rate among the target segment once launched</li>
+  </ul>
+  </div>
+
+  <div class="callout"><strong>Say this:</strong> "If users don't need it, no amount of good design will save it. Validate the job before you design the screens."</div>
+</section>
+
+<!-- ======================= USABILITY ======================= -->
+<section id="usability" class="usab" data-type="usab">
+  <div class="eyebrow">05 · Problem type 2</div>
+  <div class="type-head"><span class="dot"></span><h2>Usability problem</h2></div>
+  <p class="say">"Users drop off, get confused or make errors."</p>
+
+  <div class="kb" data-title="Usability problem: what it is">
+  <h3>What it is</h3>
+  <p>A usability problem means users want the outcome, but the interface gets in the way. The need is real; the path to it is too long, unclear or error-prone. This is the most common problem type and usually the cheapest to fix.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card kb" data-title="Usability problem: signals in the data">
+      <h3 style="margin-top:0">Signals in the data</h3>
+      <ul>
+        <li>Sharp drop-off or abandonment at a specific step in the funnel</li>
+        <li>High error rates, form re-submissions, "back" taps</li>
+        <li>Long time-on-task for simple jobs</li>
+        <li>Support tickets that ask "how do I…?"</li>
+      </ul>
+    </div>
+    <div class="card kb" data-title="Usability problem: what users say">
+      <h3 style="margin-top:0">What users say</h3>
+      <ul>
+        <li>"I couldn't find where to…"</li>
+        <li>"I wasn't sure if it went through."</li>
+        <li>"I tried three times and gave up."</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Frameworks to use</h3>
+
+  <article class="fw" id="fw-nielsen">
+    <div class="fw-head"><h4>Nielsen's 10 usability heuristics</h4><button class="ask" data-q="Explain Nielsen's heuristics with industry examples">Ask</button></div>
+    <div class="kb" data-title="Nielsen's 10 usability heuristics">
+      <p>Nielsen's 10 heuristics are rules of thumb from Jakob Nielsen for checking a design. The ones students will use most:</p>
+      <ul>
+        <li><strong>Visibility of system status:</strong> always show what's happening (progress bars, "Payment processing…").</li>
+        <li><strong>Match with the real world:</strong> use the user's words, not internal jargon ("Order ID", not "SO Number").</li>
+        <li><strong>User control and freedom:</strong> easy undo and cancel.</li>
+        <li><strong>Error prevention:</strong> design so mistakes can't happen (disable invalid dates, confirm big transfers).</li>
+        <li><strong>Recognition over recall:</strong> show options instead of making users remember (recent searches, pre-filled values).</li>
+      </ul>
+      <p><span class="label">How to apply:</span> Run a heuristic evaluation: 3–5 evaluators each walk the flow and log violations by heuristic and severity.</p>
+    </div>
+    <div class="ex kb" data-title="Nielsen's heuristics: industry examples (live order tracking, Gmail undo send and attachment reminder, search suggestions)">
+      <div class="label">In industry</div>
+      <ul>
+        <li><strong>Visibility of system status:</strong> food-delivery and ride-hailing apps show live order and driver tracking ("Preparing → Picked up → 6 min away"), which cuts "where is my order?" calls.</li>
+        <li><strong>User control and freedom:</strong> Gmail's "Undo Send" gives a short window to take an email back.</li>
+        <li><strong>Error prevention:</strong> Gmail warns you if your email mentions an attachment but none is attached. Banking apps fetch the bank and branch from the IFSC code before you can submit.</li>
+        <li><strong>Recognition over recall:</strong> search boxes suggest queries and show recent searches; payment apps list saved payees so nobody retypes account numbers.</li>
+      </ul>
+    </div>
+    <figure class="mock">
+      <div class="pair">
+        <div>
+          <div class="phone" aria-label="Before: bank statement with free-text dates and an error">
+            <div class="top">Account statement <span class="muted">✕</span></div>
+            <div class="muted">From date (DD/MM/YYYY)</div><div class="field err">31/02/2026</div>
+            <div class="hint err">Invalid date. Try again.</div>
+            <div class="muted">To date (DD/MM/YYYY)</div><div class="field">dd/mm/yyyy</div>
+            <div class="muted">Format</div><div class="field">Select…</div>
+            <div class="btn sticky">Download</div>
+          </div>
+          <span class="verdict bad">Before</span>
+        </div>
+        <div>
+          <div class="phone" aria-label="After: bank statement with preset ranges and status">
+            <div class="top">Account statement <span class="muted">✕</span></div>
+            <div class="muted">Period</div>
+            <div class="chips"><span>Last month</span><span class="on">Last 3 months</span><span>Last FY</span><span>Custom</span></div>
+            <div class="hint ok">1 Jan – 31 Mar 2026 · 142 transactions</div>
+            <div class="muted">Format</div>
+            <div class="chips"><span class="on">PDF</span><span>Excel</span></div>
+            <div class="step"><i></i><span>Sent to r•••@gmail.com too</span></div>
+            <div class="btn sticky">Download PDF</div>
+          </div>
+          <span class="verdict good">After</span>
+        </div>
+        <div>
+          <div class="phone" aria-label="Error prevention: forgotten attachment reminder">
+            <div class="top">New email</div>
+            <div class="line" style="width:80%"></div><div class="line"></div><div class="line" style="width:60%"></div>
+            <div class="muted">"Please find the report attached…"</div>
+            <div class="modal"><div>
+              <b>Forgot the attachment?</b>
+              <span class="muted">You wrote "attached", but nothing is attached.</span>
+              <div><span class="btn small">Attach file</span> <span class="btn small ghost">Send anyway</span></div>
+            </div></div>
+          </div>
+          <span class="verdict good">Error prevention</span>
+        </div>
+      </div>
+      <figcaption>The slide's bank-statement example. Before: free-text dates invite errors and force users to recall formats. After: preset ranges (recognition over recall), impossible dates ruled out (error prevention) and a clear summary (system status).</figcaption>
+    </figure>
+  </article>
+
+  <article class="fw" id="fw-hick">
+    <div class="fw-head"><h4>Hick's Law</h4><button class="ask" data-q="Explain Hick's Law with an industry example">Ask</button></div>
+    <div class="kb" data-title="Hick's Law">
+      <p>Hick's Law says the time to make a decision grows with the number and complexity of choices. Too many options cause hesitation, then abandonment.</p>
+      <p><span class="label">How to apply:</span> Cut options, group them, set a smart default, or reveal choices progressively.</p>
+    </div>
+    <div class="ex kb" data-title="Hick's Law: industry example (Google homepage, checkout payment options)">
+      <div class="label">In industry · Google vs the web portals</div>
+      <p>In the early 2000s, portal homepages packed in news, weather, stocks, mail and dozens of links. Google's homepage offered essentially one choice: a search box. Fewer decisions meant users got to the task immediately, and the minimal homepage became a signature of the product.</p>
+      <p><strong>Checkout version:</strong> UPI and food-delivery apps put the last-used payment method and a couple of popular options first, with everything else behind "More options", instead of listing 15 methods at once.</p>
+    </div>
+    <figure class="mock">
+      <div class="pair">
+        <div>
+          <div class="phone" aria-label="Before: fifteen payment options">
+            <div class="top">Choose payment</div>
+            <div class="portal" style="display:flex;flex-direction:column;gap:4px">
+              <div class="row"><span>UPI – App 1</span><i class="radio"></i></div><div class="row"><span>UPI – App 2</span><i class="radio"></i></div>
+              <div class="row"><span>UPI – App 3</span><i class="radio"></i></div><div class="row"><span>Credit card</span><i class="radio"></i></div>
+              <div class="row"><span>Debit card</span><i class="radio"></i></div><div class="row"><span>Net banking (58 banks)</span><i class="radio"></i></div>
+              <div class="row"><span>Wallet A</span><i class="radio"></i></div><div class="row"><span>Wallet B</span><i class="radio"></i></div>
+              <div class="row"><span>Pay later A</span><i class="radio"></i></div><div class="row"><span>Pay later B</span><i class="radio"></i></div>
+              <div class="row"><span>EMI</span><i class="radio"></i></div><div class="row"><span>Gift card</span><i class="radio"></i></div>
+            </div>
+          </div>
+          <span class="verdict bad">Before · 15 choices</span>
+        </div>
+        <div>
+          <div class="phone" aria-label="After: last used plus two options">
+            <div class="top">Pay ₹486</div>
+            <div class="muted">Last used</div>
+            <div class="row sel"><span><b>UPI</b> · r•••@okbank</span><i class="radio"></i></div>
+            <div class="muted">Other options</div>
+            <div class="row"><span>Credit / debit card</span><i class="radio"></i></div>
+            <div class="row"><span>Cash on delivery</span><i class="radio"></i></div>
+            <div class="muted center">More options ›</div>
+            <div class="btn sticky">Pay ₹486</div>
+          </div>
+          <span class="verdict good">After · 3 + more</span>
+        </div>
+      </div>
+      <figcaption>Same payment choices, different decision load: a smart default plus progressive disclosure.</figcaption>
+    </figure>
+  </article>
+
+  <article class="fw" id="fw-fitts">
+    <div class="fw-head"><h4>Fitts's Law and visual hierarchy</h4><button class="ask" data-q="Explain Fitts's Law and visual hierarchy with an industry example">Ask</button></div>
+    <div class="kb" data-title="Fitts's Law and visual hierarchy">
+      <p><strong>Fitts's Law:</strong> the time to reach a target depends on its size and distance. Big, close targets are faster and cause fewer mis-taps. <strong>Visual hierarchy:</strong> size, contrast, colour and position tell the eye what to look at first.</p>
+      <p><span class="label">How to apply:</span> Make the primary action large and within thumb reach (the bottom of the screen on mobile). Give it the strongest contrast, and make secondary actions visibly quieter.</p>
+    </div>
+    <div class="ex kb" data-title="Fitts's Law: industry example (Safari address bar at the bottom, sticky checkout buttons, Amazon buy buttons)">
+      <div class="label">In industry</div>
+      <ul>
+        <li><strong>Thumb reach:</strong> with iOS 15, Apple moved Safari's address bar to the bottom of the screen by default, within easy reach of the thumb on large phones.</li>
+        <li><strong>Sticky primary action:</strong> food-delivery and e-commerce apps keep a full-width "Place order" or "Add to cart" bar fixed at the bottom, so the main action is always the biggest, closest target.</li>
+        <li><strong>Visual hierarchy:</strong> on Amazon's product page, the price and the brightly coloured "Add to Cart" and "Buy Now" buttons stand out against an otherwise neutral page.</li>
+      </ul>
+    </div>
+    <figure class="mock">
+      <div class="pair">
+        <div>
+          <div class="phone" aria-label="Before: small place-order link at top">
+            <div class="top">Cart <span class="btn small">Place order</span></div>
+            <div class="img"></div>
+            <div class="line"></div><div class="line" style="width:70%"></div>
+            <div class="row"><span>Apply coupon</span><span class="btn small">Apply</span></div>
+            <div class="row"><span>Add tip</span><span class="btn small">Add</span></div>
+            <div class="row"><span>Total</span><b>₹486</b></div>
+          </div>
+          <span class="verdict bad">Before</span>
+        </div>
+        <div>
+          <div class="phone" aria-label="After: sticky full-width place-order button">
+            <div class="top">Cart</div>
+            <div class="img"></div>
+            <div class="line"></div><div class="line" style="width:70%"></div>
+            <div class="muted">Apply coupon ›</div>
+            <div class="muted">Add tip ›</div>
+            <div class="row" style="border:0;padding:0"><span>Total</span><b class="big">₹486</b></div>
+            <div class="btn sticky">Place order · ₹486</div>
+          </div>
+          <span class="verdict good">After</span>
+        </div>
+      </div>
+      <figcaption>Before: the main action is small and far from the thumb, and competes with three equal-weight buttons. After: one big, close, high-contrast target; secondary actions become quiet links.</figcaption>
+    </figure>
+  </article>
+
+  <div class="kb" data-title="Usability problem: prototype fidelity and metrics">
+  <h3>Prototype fidelity</h3>
+  <p>For a usability problem use <strong>medium fidelity</strong>: a clickable Figma prototype with realistic layout and copy. Users need to actually try the flow, but visual polish isn't the point yet.</p>
+  <h3>Metrics to watch</h3>
+  <ul>
+    <li>Task success rate and time-on-task in usability tests</li>
+    <li>Step-by-step funnel conversion</li>
+    <li>Error rate; "how do I" support tickets</li>
+    <li>System Usability Scale (SUS) score</li>
+  </ul>
+  </div>
+
+  <div class="callout kb" data-title="Worked example from the slide: bank-statement download"><strong>Worked example from the slide:</strong> Bank-statement download has high drop-off. It's a usability problem, because users clearly want the statement. Apply <em>error prevention</em> (block impossible date ranges) and <em>recognition over recall</em> (one-tap "Last 3 months", "Last FY"). Test with a clickable prototype, and measure completion rate and time-to-download.</div>
+</section>
+
+<!-- ======================= ENGAGEMENT ======================= -->
+<section id="engagement" class="eng" data-type="eng">
+  <div class="eyebrow">06 · Problem type 3</div>
+  <div class="type-head"><span class="dot"></span><h2>Engagement problem</h2></div>
+  <p class="say">"Users try it once and never come back."</p>
+
+  <div class="kb" data-title="Engagement problem: what it is">
+  <h3>What it is</h3>
+  <p>An engagement problem means users need the product and can use it, but it doesn't become part of their routine. First use goes fine; retention collapses. This is about behaviour and motivation over time, not a single screen.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card kb" data-title="Engagement problem: signals in the data">
+      <h3 style="margin-top:0">Signals in the data</h3>
+      <ul>
+        <li>Good activation, but a steep Day-1 / Day-7 / Day-30 retention drop</li>
+        <li>Low DAU/MAU ratio (stickiness)</li>
+        <li>High uninstall or churn rate after the first week</li>
+        <li>Notifications ignored or turned off</li>
+      </ul>
+    </div>
+    <div class="card kb" data-title="Engagement problem: what users say">
+      <h3 style="margin-top:0">What users say</h3>
+      <ul>
+        <li>"It was fine, I just forgot about it."</li>
+        <li>"I didn't see a reason to open it again."</li>
+        <li>"Too many notifications, so I turned them off."</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Frameworks to use</h3>
+
+  <article class="fw" id="fw-hook">
+    <div class="fw-head"><h4>Hook Model (Nir Eyal)</h4><button class="ask" data-q="Explain the Hook Model with an industry example">Ask</button></div>
+    <div class="kb" data-title="Hook Model (Nir Eyal)">
+      <p>The Hook Model is a four-step loop that builds habits:</p>
+      <ol>
+        <li><strong>Trigger:</strong> external (notification, email) at first, then internal (boredom, anxiety, "I wonder if…").</li>
+        <li><strong>Action:</strong> the simplest behaviour done in anticipation of a reward (open the app, scroll).</li>
+        <li><strong>Variable reward:</strong> something unpredictable and satisfying (new deals, likes, a surprise cashback).</li>
+        <li><strong>Investment:</strong> the user puts something in (a wishlist, streak, followers, saved preferences) that makes the next cycle more valuable and loads the next trigger.</li>
+      </ol>
+    </div>
+    <div class="ex kb" data-title="Hook Model: industry example (Duolingo streaks)">
+      <div class="label">In industry · Duolingo</div>
+      <p>Duolingo is a textbook hook. <strong>Trigger:</strong> a daily reminder from its mascot ("Time for your Spanish lesson!"). <strong>Action:</strong> a lesson short enough to finish in a few minutes. <strong>Variable reward:</strong> XP, league rankings and surprise achievements. <strong>Investment:</strong> the streak itself; the longer it gets, the more it hurts to lose it, which becomes the internal trigger for tomorrow.</p>
+      <p><strong>Classroom bridge:</strong> A fitness app sends a 7 a.m. reminder (trigger), the user logs a 10-minute workout (action), sees a streak and a random badge (variable reward), and sets tomorrow's goal (investment).</p>
+    </div>
+    <figure class="mock">
+      <div class="pair">
+        <div>
+          <div class="phone" aria-label="Trigger: lock screen notification">
+            <div class="top"><span>9:41</span><span class="muted">Mon</span></div>
+            <div class="center big" style="margin:10px 0 4px">9:41</div>
+            <div class="notif"><span class="appicon">L</span><span><b>LingoLeaf</b><br>Your 23-day streak ends at midnight. 3 minutes keeps it alive!</span></div>
+          </div>
+          <span class="verdict good">1 · Trigger</span>
+        </div>
+        <div>
+          <div class="phone" aria-label="Reward and investment: streak screen">
+            <div class="top">Lesson complete</div>
+            <div class="center big" style="color:#C2410C">🔥 24</div>
+            <div class="center muted">day streak</div>
+            <div class="bar"><span style="height:40%"></span><span style="height:60%"></span><span style="height:35%"></span><span style="height:70%"></span><span style="height:55%"></span><span style="height:80%"></span><span class="today" style="height:100%"></span></div>
+            <div class="row sel"><span>🎁 Surprise: double XP for 15 min</span></div>
+            <div class="row"><span>Set tomorrow's goal</span><span class="btn small">10 min</span></div>
+            <div class="btn sticky">Continue</div>
+          </div>
+          <span class="verdict good">3 · Reward · 4 · Investment</span>
+        </div>
+      </div>
+      <figcaption>Generic language-learning app ("LingoLeaf") showing the loop: a timely trigger, a tiny action (not shown), a variable reward, and an investment that loads the next trigger.</figcaption>
+    </figure>
+  </article>
+
+  <article class="fw" id="fw-fogg">
+    <div class="fw-head"><h4>Fogg Behaviour Model (B = MAP)</h4><button class="ask" data-q="Explain the Fogg Behaviour Model B=MAP with an industry example">Ask</button></div>
+    <div class="kb" data-title="Fogg Behaviour Model (B = MAP)">
+      <p>BJ Fogg's model says a <strong>B</strong>ehaviour happens only when <strong>M</strong>otivation, <strong>A</strong>bility and a <strong>P</strong>rompt meet at the same moment. If the behaviour isn't happening, one of the three is missing. High motivation can make up for a hard task, and a very easy task needs little motivation; the prompt has to arrive when the person is above the "action line".</p>
+      <p><span class="label">How to apply:</span> Diagnose which element is weak. Low motivation: show the value or a reward. Low ability: make the action easier (often the quickest win). No prompt: add a timely, relevant trigger.</p>
+    </div>
+    <div class="ex kb" data-title="Fogg Behaviour Model: industry example (UPI scan-and-pay, Amazon 1-Click, SIP setup)">
+      <div class="label">In industry · Raising ability</div>
+      <p><strong>UPI scan-and-pay:</strong> paying a street vendor digitally was low-motivation (it's ₹30) and used to be low-ability (cards, PINs, card machines). Scan a QR and enter a PIN made it so easy that the behaviour spread even for tiny amounts. <strong>Amazon 1-Click</strong> did the same for online shopping: removing checkout steps raised ability, so purchases happened at lower motivation.</p>
+      <p><strong>Classroom bridge:</strong> Users want to save (motivation) and get reminders (prompt), but setting up a SIP takes 12 steps (ability). Cutting it to a 2-tap "Start ₹500/month" lifts conversion more than any extra reminder.</p>
+    </div>
+    <figure class="mock">
+      <svg class="svgfig" viewBox="0 0 620 260" role="img" aria-label="Fogg behaviour chart: motivation versus ability with an action line; a 12-step SIP falls below the line, a 2-tap SIP sits above it">
+        <line class="axis" x1="60" y1="20" x2="60" y2="210"/><line class="axis" x1="60" y1="210" x2="590" y2="210"/>
+        <text x="20" y="20" class="mutedtxt">High</text><text x="20" y="208" class="mutedtxt">Low</text>
+        <text x="14" y="120" class="bold" transform="rotate(-90 14 120)" text-anchor="middle">Motivation</text>
+        <text x="80" y="232" class="mutedtxt">Hard to do</text><text x="590" y="232" class="mutedtxt" text-anchor="end">Easy to do</text>
+        <text x="325" y="250" class="bold" text-anchor="middle">Ability</text>
+        <path class="curve" d="M90 30 C 140 150, 260 190, 580 200"/>
+        <text x="470" y="185" class="mutedtxt">Action line</text>
+        <circle class="pt" cx="150" cy="150" r="7"/><text x="150" y="176" text-anchor="middle">12-step SIP setup:</text><text x="150" y="192" text-anchor="middle">prompt fails</text>
+        <circle class="pt good" cx="470" cy="140" r="7"/><text x="486" y="128">2-tap SIP:</text><text x="486" y="144">prompt works</text>
+        <path class="dash" d="M160 150 C 260 145, 360 140, 460 140"/>
+      </svg>
+      <figcaption>Same user, same motivation. Moving the task to the right (easier) puts it above the action line, so the prompt finally works.</figcaption>
+    </figure>
+  </article>
+
+  <article class="fw" id="fw-peak">
+    <div class="fw-head"><h4>Peak-End Rule (Daniel Kahneman)</h4><button class="ask" data-q="Explain the Peak-End Rule with an industry example">Ask</button></div>
+    <div class="kb" data-title="Peak-End Rule (Daniel Kahneman)">
+      <p>The Peak-End Rule says people judge an experience mostly by its most intense moment (the peak) and how it ended, not by the average of every moment.</p>
+      <p><span class="label">How to apply:</span> Deliberately design one delightful high point and a strong finish. Fix any painful peak first, because a bad peak dominates the memory.</p>
+    </div>
+    <div class="ex kb" data-title="Peak-End Rule: industry example (IKEA exit food, Mailchimp high-five, insurance claim)">
+      <div class="label">In industry</div>
+      <ul>
+        <li><strong>IKEA:</strong> the store is a long, one-way maze and you often assemble the furniture yourself, yet people remember it fondly. It's often cited for its peaks (room set-ups you can walk into) and its ending: cheap snacks and ice cream right after the checkout.</li>
+        <li><strong>Mailchimp:</strong> sending an email campaign is stressful. Mailchimp used to end it with its mascot giving a celebratory high-five, turning the riskiest moment into the most memorable one.</li>
+        <li><strong>Classroom bridge:</strong> a long insurance claim feels much better if it ends with an instant "Approved, ₹42,000 credited" screen and a thank-you, rather than a silent status change.</li>
+      </ul>
+    </div>
+    <figure class="mock">
+      <div class="pair">
+        <div>
+          <div class="phone" aria-label="Claim approved success screen">
+            <span class="confetti" style="left:20px;top:40px;background:#C2410C;transform:rotate(20deg)"></span>
+            <span class="confetti" style="left:150px;top:52px;background:#4338CA;transform:rotate(-30deg)"></span>
+            <span class="confetti" style="left:60px;top:90px;background:#F59E0B"></span>
+            <span class="confetti" style="left:130px;top:100px;background:#0F766E;transform:rotate(45deg)"></span>
+            <div class="top">Claim #A-2291</div>
+            <div class="tick">✓</div>
+            <div class="center"><b style="font-size:14px">Approved!</b></div>
+            <div class="center big">₹42,000</div>
+            <div class="center muted">credited to HDFC ••4821 · just now</div>
+            <div class="row"><span>Rate your claim experience</span><span>★★★★★</span></div>
+            <div class="btn sticky">Done</div>
+          </div>
+          <span class="verdict good">Designed ending</span>
+        </div>
+        <div style="flex:1;min-width:260px">
+          <svg class="svgfig" viewBox="0 0 360 230" role="img" aria-label="Experience curve with a designed peak and a strong ending">
+            <line class="axis" x1="30" y1="20" x2="30" y2="190"/><line class="axis" x1="30" y1="190" x2="350" y2="190"/>
+            <path class="dash" d="M30 120 L 350 120"/><text x="345" y="112" text-anchor="end" class="mutedtxt">average</text>
+            <path class="curve" d="M40 130 C 70 150, 90 160, 120 150 S 160 50, 180 45 S 220 150, 260 150 S 310 40, 340 35"/>
+            <circle class="pt" cx="180" cy="45" r="6"/><text x="180" y="32" text-anchor="middle" class="bold">Peak</text>
+            <circle class="pt good" cx="340" cy="35" r="6"/><text x="330" y="24" text-anchor="end" class="bold">End</text>
+            <text x="40" y="212" class="mutedtxt">File claim</text><text x="140" y="212" class="mutedtxt">Instant video call</text><text x="270" y="212" class="mutedtxt">Payout</text>
+          </svg>
+        </div>
+      </div>
+      <figcaption>Memory is built from the peak and the end, not the average. Design both on purpose.</figcaption>
+    </figure>
+  </article>
+
+  <div class="kb" data-title="Engagement problem: prototype fidelity and metrics">
+  <h3>Prototype fidelity</h3>
+  <p>For an engagement problem use <strong>high fidelity</strong>: a hi-fi or vibe-coded prototype with real or realistic data, ideally used over several days (a diary study). Habits can't be tested in one 20-minute session.</p>
+  <h3>Metrics to watch</h3>
+  <ul>
+    <li>Retention curves (D1, D7, D30) and cohort analysis</li>
+    <li>DAU/MAU stickiness and session frequency</li>
+    <li>Notification opt-out and response rate</li>
+  </ul>
+  </div>
+
+  <div class="warn kb" data-title="Ethics: engagement frameworks and dark patterns"><strong>Ethics note for the class:</strong> Engagement frameworks can tip into dark patterns, such as fake countdown timers, guilt-trip copy or endless feeds. Good test: would the user thank you for this hook if they understood how it works? Use these frameworks to help users keep habits they actually want, and avoid manipulative design.</div>
+</section>
+
+<section id="compare">
+  <div class="eyebrow">07</div>
+  <h2>Side-by-side comparison</h2>
+  <div class="tablewrap">
+  <table>
+    <tr><th></th><th><span class="tag need">Need</span></th><th><span class="tag usab">Usability</span></th><th><span class="tag eng">Engagement</span></th></tr>
+    <tr class="kb" data-title="Comparison: key question for each problem type"><td><strong>Key question</strong></td><td>Need: Are we solving the right problem?</td><td>Usability: Can users finish the task easily?</td><td>Engagement: Will users build a habit?</td></tr>
+    <tr class="kb" data-title="Comparison: typical symptom for each problem type"><td><strong>Typical symptom</strong></td><td>Low adoption; workarounds</td><td>Funnel drop-off; errors</td><td>Retention cliff after first use</td></tr>
+    <tr class="kb" data-title="Comparison: frameworks for each problem type"><td><strong>Frameworks</strong></td><td>JTBD, Design Thinking, journey mapping</td><td>Nielsen heuristics, Hick's Law, Fitts's Law</td><td>Hook Model, Fogg (B=MAP), Peak-End</td></tr>
+    <tr class="kb" data-title="Comparison: research method for each problem type"><td><strong>Research method</strong></td><td>Interviews, contextual inquiry</td><td>Usability tests, heuristic review, analytics</td><td>Cohort analytics, diary studies</td></tr>
+    <tr class="kb" data-title="Comparison: prototype fidelity for each problem type"><td><strong>Prototype fidelity</strong></td><td>Need: paper / low-fi, fake door</td><td>Usability: clickable mid-fi (Figma)</td><td>Engagement: hi-fi or vibe-coded, real data</td></tr>
+    <tr class="kb" data-title="Comparison: success metric for each problem type"><td><strong>Success metric</strong></td><td>Validated need, adoption</td><td>Task success, conversion</td><td>D7/D30 retention, stickiness</td></tr>
+    <tr class="kb" data-title="Comparison: industry examples for each problem type"><td><strong>Industry examples</strong></td><td>Milkshake study, GE MRI, Disney MagicBand</td><td>Gmail, Google homepage, Safari bottom bar</td><td>Duolingo, UPI, IKEA, Mailchimp</td></tr>
+  </table>
+  </div>
+</section>
+
+<section id="exercise">
+  <div class="eyebrow">08</div>
+  <h2>Class exercise: diagnose these</h2>
+  <p>Read each scenario aloud. Give pairs 60 seconds to choose a problem type and one framework. Reveal the answers one at a time.</p>
+
+  <details class="kb" data-title="Exercise 1: food-delivery cart abandonment at payment"><summary>1. A food-delivery app: users add items to the cart but abandon at payment.</summary>
+    <p><span class="tag usab">Usability</span> They clearly want food. Check Hick's Law (too many payment options) and visibility of system status (payment stuck with no feedback).</p></details>
+  <details class="kb" data-title="Exercise 2: fitness app uninstalls within a week"><summary>2. A new fitness app: 70% of users uninstall within a week.</summary>
+    <p><span class="tag eng">Engagement</span> Onboarding worked; habit didn't. Apply the Hook Model: morning trigger, streaks as variable reward, goal-setting as investment.</p></details>
+  <details class="kb" data-title="Exercise 3: B2B procurement tool nobody uses after training"><summary>3. A B2B procurement tool that nobody uses, even after training.</summary>
+    <p><span class="tag need">Need</span> Training didn't help, which suggests it's not a usability issue. Use JTBD: buyers' real job is fast approvals, not browsing a catalogue.</p></details>
+  <details class="kb" data-title="Exercise 4: banking app transfers failing on wrong IFSC"><summary>4. A banking app: 40% of fund transfers fail because of wrong IFSC codes.</summary>
+    <p><span class="tag usab">Usability</span> Error prevention and recognition over recall: auto-fetch the IFSC from bank and branch, and validate before submit.</p></details>
+  <details class="kb" data-title="Exercise 5: edtech students don't start lesson two"><summary>5. An edtech app: students finish the first lesson happily but rarely start lesson two.</summary>
+    <p><span class="tag eng">Engagement</span> Fogg: the prompt is missing (no reminder), and possibly ability (lesson two is 45 minutes). Also apply Peak-End: make lesson one end on a cliffhanger.</p></details>
+  <details class="kb" data-title="Exercise 6: grocery app recipe videos nobody watches"><summary>6. A grocery app launches "recipe videos". Views are tiny, and users say they use YouTube for that.</summary>
+    <p><span class="tag need">Need</span> The job is already well served elsewhere. Run journey mapping or JTBD: maybe the real job is "buy all ingredients for tonight's dinner in one tap."</p></details>
+
+  <div class="callout"><strong>Debrief prompt:</strong> "Which clue gave it away?" Push students to cite evidence (what users do and what they say), not gut feel.</div>
+</section>
+
+<section id="traps">
+  <div class="eyebrow">09</div>
+  <h2>Misdiagnosis traps</h2>
+  <div class="warn kb" data-title="Trap 1: treating every low number as usability"><strong>Trap 1: treating every low number as usability.</strong> Low conversion can mean users don't want it (need). Check: do users who <em>complete</em> the flow come back and value it?</div>
+  <div class="warn kb" data-title="Trap 2: gamifying a need problem"><strong>Trap 2: gamifying a need problem.</strong> Streaks and badges on a product with no real value only delay the drop-off.</div>
+  <div class="warn kb" data-title="Trap 3: building hi-fi to answer a need question"><strong>Trap 3: building hi-fi to answer a need question.</strong> Polished prototypes get polished feedback ("change the colour") and hide the real question: "Would you use this?"</div>
+  <div class="warn kb" data-title="Trap 4: problems come in layers"><strong>Trap 4: one type at a time.</strong> Real products often have layered problems. Fix in order: need, then usability, then engagement.</div>
+</section>
+
+<section id="qa">
+  <div class="eyebrow">10</div>
+  <h2>Likely student questions</h2>
+  <details class="kb" data-title="Can a problem be more than one type?"><summary>"Can a problem be more than one type?"</summary>
+    <p>Yes, often. Solve them in order: there's no point making an unwanted feature easier to use, or more habit-forming. Diagnose the earliest broken layer first.</p></details>
+  <details class="kb" data-title="How do I tell a need problem from a usability problem?"><summary>"How do I tell need from usability when adoption is low?"</summary>
+    <p>Watch a few users try it. If they complete the task easily but shrug, it's a need problem. If they want the outcome but struggle, it's usability. Five usability tests usually settle it.</p></details>
+  <details class="kb" data-title="Are these frameworks just for designers?"><summary>"Aren't these frameworks just for designers?"</summary>
+    <p>Designers apply them in detail, but the PM owns the diagnosis and the success metric. Naming the problem type correctly is what keeps the team building the right thing.</p></details>
+  <details class="kb" data-title="Is the Hook Model manipulative or ethical?"><summary>"Isn't the Hook Model manipulative?"</summary>
+    <p>It can be. Use the ethics test in section 06: build hooks for habits users want (saving money, exercising, learning), not for compulsive use that serves only your metrics.</p></details>
+  <details class="kb" data-title="Where does AI prototyping fit?"><summary>"Where does AI prototyping fit?"</summary>
+    <p>AI makes hi-fi prototypes cheap, which is a risk for need problems (you may over-polish too early) and a big win for engagement problems (you can test realistic, data-driven experiences quickly).</p></details>
+</section>
+
+<footer>
+  Teacher's guide for slide 14, "Choosing a UX Framework" · Wireframes &amp; Prototyping session · DPM Cohort, IIM Visakhapatnam
+</footer>
+</main>
+</div>
+
+<!-- ======================= CHAT ======================= -->
+<button class="launcher" id="launcher" aria-controls="chat" aria-expanded="false">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span class="lbl">Ask the guide</span><kbd>/</kbd>
+</button>
+<div class="scrim" id="scrim"></div>
+<aside class="chat" id="chat" role="dialog" aria-modal="false" aria-labelledby="chat-title">
+  <div class="chat-head">
+    <div class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></div>
+    <div class="ttl"><b id="chat-title">Guide assistant</b><span>Answers only from this page</span></div>
+    <button class="iconbtn" id="clear" title="Clear conversation" aria-label="Clear conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+    <button class="iconbtn" id="close" title="Close (Esc)" aria-label="Close assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="log" id="log" aria-live="polite"></div>
+  <div class="compose">
+    <form id="form">
+      <textarea id="q" rows="1" placeholder="Ask about a framework, or describe a symptom…" aria-label="Your question"></textarea>
+      <button class="send" id="send" type="submit" aria-label="Send" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </form>
+    <small>Enter to send · Shift+Enter for a new line · Esc to close</small>
+  </div>
+</aside>
+
+<script>
+(() => {
+  /* ---------------- knowledge base built from the page itself ---------------- */
+  const STOP = new Set(("a an the is are was were be been being of to in on for and or with what which how why when where who whom do does did " +
+    "can could should would will shall may might i we our my me you your it its this that these those about tell explain give show " +
+    "from as at by into their they them there than then so if not no yes any some more most use using used please also just " +
+    "get got have has had like one two three us am very really much many each other such only own same too s t").split(" "));
+  const stem = w => {
+    if (w.length > 5 && w.endsWith("ies")) return w.slice(0, -3) + "y";
+    if (w.length > 5 && w.endsWith("ing")) return w.slice(0, -3);
+    if (w.length > 4 && w.endsWith("ed")) return w.slice(0, -2);
+    if (w.length > 4 && w.endsWith("es") && !w.endsWith("ses")) return w.slice(0, -2);
+    if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
+    return w;
+  };
+  const tokens = t => (t.toLowerCase().replace(/[’']/g, "").replace(/b\s*=\s*map/g, "bmap fogg").match(/[a-z0-9₹]+/g) || [])
+    .filter(w => !STOP.has(w)).map(stem);
+  const SYN = {
+    jtbd: ["job", "done"], job: ["jtbd"], bmap: ["fogg", "motivation", "ability", "prompt"], fogg: ["bmap"],
+    hick: ["choice", "option", "decision"], fitt: ["target", "button", "thumb", "reach"], hook: ["trigger", "reward", "investment", "habit"],
+    habit: ["hook", "engagement"], retention: ["engagement", "come", "back"], churn: ["engagement", "retention", "uninstall"],
+    uninstall: ["engagement", "retention"], abandon: ["usability", "drop"], drop: ["usability"], dropoff: ["usability", "drop"],
+    confus: ["usability"], error: ["usability", "prevention"], mistake: ["error"], heuristic: ["nielsen"], nielsen: ["heuristic"],
+    peak: ["end", "kahneman"], ending: ["end", "peak"], empathy: ["empathise", "design", "thinking"], empathise: ["empathy"],
+    journey: ["map"], mockup: ["prototype"], fidelity: ["prototype", "fi"], metric: ["measure", "kpi"], measure: ["metric"], kpi: ["metric"],
+    ethic: ["dark", "pattern", "manipulative"], ethical: ["dark", "pattern", "manipulative", "ethic"], manipulat: ["dark", "pattern"],
+    example: ["industry"], company: ["industry"], real: ["industry"], adoption: ["need"], value: ["need"], timing: ["time", "plan"],
+    schedule: ["plan", "time"], minute: ["time"], hierarchy: ["visual", "fitt"], recall: ["recognition"], undo: ["control"],
+    duolingo: ["hook", "streak"], milkshake: ["jtbd"], ikea: ["peak"], disney: ["journey", "magicband"], gmail: ["nielsen"], upi: ["fogg"],
+    gamif: ["hook", "streak", "badge"], streak: ["hook"]
+  };
+  const qTokens = q => {
+    const base = tokens(q), out = [...base];
+    base.forEach(t => Object.keys(SYN).forEach(k => { if (t.startsWith(k)) out.push(...SYN[k]); }));
+    return out;
+  };
+
+  /* textContent (not innerText) so closed <details> answers are indexed too; add breaks after block elements */
+  const getText = el => {
+    const c = el.cloneNode(true);
+    c.querySelectorAll("td, th").forEach(n => { if (n.nextElementSibling) n.after(document.createTextNode(" · ")); });
+    c.querySelectorAll("p, li, summary, h3, h4, div, tr, br").forEach(n => n.after(document.createTextNode("\n")));
+    return c.textContent.replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, "\n").replace(/^\s*·\s*/gm, "").trim();
+  };
+  const els = [...document.querySelectorAll("main .kb")];
+  const docs = els.map((el, i) => {
+    if (!el.id) el.id = "kb-" + i;
+    const sec = el.closest("section");
+    const secTitle = sec ? (sec.querySelector("h2") || {}).textContent || "" : "Introduction";
+    const title = el.dataset.title || secTitle;
+    const text = getText(el);
+    const tk = [...tokens(title), ...tokens(title), ...tokens(text)];
+    const tf = {}; tk.forEach(t => tf[t] = (tf[t] || 0) + 1);
+    return { el, id: el.id, title, secTitle, text, tf, len: tk.length, isEx: el.classList.contains("ex"), type: sec ? sec.dataset.type : null };
+  });
+  const N = docs.length, avg = docs.reduce((a, d) => a + d.len, 0) / N, df = {};
+  docs.forEach(d => Object.keys(d.tf).forEach(t => df[t] = (df[t] || 0) + 1));
+  const idf = t => Math.log(1 + (N - (df[t] || 0) + .5) / ((df[t] || 0) + .5));
+  const bm25 = (q, d) => { const k1 = 1.4, b = .75; let s = 0;
+    new Set(q).forEach(t => { const f = d.tf[t]; if (f) s += idf(t) * f * (k1 + 1) / (f + k1 * (1 - b + b * d.len / avg)); }); return s; };
+
+  /* symptom diagnosis */
+  const SIGNALS = {
+    need: ["adoption", "nobody use", "no one use", "dont need", "don't need", "workaround", "not interested", "low usage", "don't want", "dont want", "no demand", "views are tiny", "ignore the feature", "excel instead", "whatsapp instead"],
+    usab: ["drop off", "drop-off", "dropoff", "abandon", "error", "confus", "fail", "can't find", "cant find", "couldn't find", "stuck", "how do i", "mistake", "give up", "gave up", "too many option", "slow to", "mis-tap", "wrong", "checkout", "form"],
+    eng: ["retention", "come back", "return", "uninstall", "churn", "once and", "forget", "forgot", "habit", "daily active", "dau", "week", "notification", "lapse", "stop using", "stopped using", "don't open", "never open"]
+  };
+  const TYPE = { need: ["Need problem", "need", "#need", "Jobs-to-be-Done, Design Thinking, journey mapping"],
+    usab: ["Usability problem", "usab", "#usability", "Nielsen's heuristics, Hick's Law, Fitts's Law"],
+    eng: ["Engagement problem", "eng", "#engagement", "Hook Model, Fogg (B = MAP), Peak-End Rule"] };
+  const diagnose = q => {
+    const s = q.toLowerCase(); if (/^(what|who|explain|define|tell me what)\b/.test(s) && !/(users|customers|people)\b/.test(s)) return null;
+    let best = null, hits = [];
+    for (const k of Object.keys(SIGNALS)) { const h = SIGNALS[k].filter(w => s.includes(w)); if (h.length && (!best || h.length > hits.length)) { best = k; hits = h; } }
+    return best && /(users|customers|people|students|buyers|sellers|our|my|we|they|nobody|no one)\b/.test(s) ? { k: best, hits } : null;
+  };
+
+  const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const highlight = (html, q) => {
+    const words = [...new Set((q.toLowerCase().match(/[a-z0-9']{4,}/g) || []).filter(w => !STOP.has(w)))];
+    if (!words.length) return html;
+    const re = new RegExp("\\b(" + words.map(w => w.replace(/[^a-z0-9']/g, "")).join("|") + ")", "gi");
+    return html.replace(re, "<mark>$1</mark>");
+  };
+  /* answer in whole paragraphs / list items (coherent units), trimmed at a sentence boundary */
+  const trimTo = (s, n = 340) => { if (s.length <= n) return s; const cut = s.slice(0, n); const i = cut.lastIndexOf(". ");
+    return (i > 120 ? cut.slice(0, i + 1) : cut.replace(/\s+\S*$/, "") + "…"); };
+  const summarise = (d, q, max = 3) => {
+    const qt = new Set(qTokens(q));
+    const lines = d.text.split("\n").map(s => s.trim()).filter(s => s.length > 2 && !/^in industry/i.test(s));
+    const isTable = !!d.el.querySelector("table");
+    if (isTable) lines.shift();
+    if (d.text.length < 620 && !isTable) return lines;
+    const scored = lines.map((s, i) => ({ s, i, sc: tokens(s).filter(t => qt.has(t)).length + (i === 0 && !isTable ? .8 : 0) }));
+    return scored.sort((a, b) => b.sc - a.sc).slice(0, isTable ? 1 : max).sort((a, b) => a.i - b.i).map(x => trimTo(x.s));
+  };
+
+  /* ---------------- chat UI ---------------- */
+  const body = document.body, chat = document.getElementById("chat"), launcher = document.getElementById("launcher"),
+    log = document.getElementById("log"), form = document.getElementById("form"), qEl = document.getElementById("q"),
+    send = document.getElementById("send"), scrim = document.getElementById("scrim");
+  const docked = () => matchMedia("(min-width: 1100px)").matches;
+  let lastFocus = null;
+
+  const SUGG = ["What is Jobs-to-be-Done?", "Industry example of Hick's Law",
+    "Our users uninstall the app after a week. Which framework?", "How is Fogg different from the Hook Model?",
+    "What prototype fidelity suits a need problem?", "Is the Hook Model ethical?"];
+  const welcome = () => {
+    log.innerHTML = "";
+    const w = document.createElement("div"); w.className = "msg bot welcome";
+    w.innerHTML = `<div class="src">Guide assistant</div><h3>Ask me about this guide</h3>
+      <p>I answer from this page only: frameworks, industry examples, metrics, the exercise and the session plan. You can also describe a symptom, and I'll suggest the problem type.</p>
+      <div class="sugg">${SUGG.map(s => `<button class="pill" data-q="${esc(s)}">${esc(s)}</button>`).join("")}</div>`;
+    log.appendChild(w);
+  };
+
+  const open = (q) => {
+    if (!body.classList.contains("chat-open")) {
+      lastFocus = document.activeElement;
+      body.classList.add("chat-open"); launcher.setAttribute("aria-expanded", "true");
+      if (!log.children.length) welcome();
+    }
+    setTimeout(() => qEl.focus({ preventScroll: true }), 60);
+    if (q) ask(q);
+  };
+  const close = () => {
+    body.classList.remove("chat-open"); launcher.setAttribute("aria-expanded", "false");
+    (lastFocus && lastFocus !== document.body ? lastFocus : launcher).focus({ preventScroll: true });
+  };
+  launcher.addEventListener("click", () => open());
+  document.getElementById("close").addEventListener("click", close);
+  scrim.addEventListener("click", close);
+  document.getElementById("clear").addEventListener("click", () => { welcome(); qEl.focus(); });
+  document.addEventListener("keydown", e => {
+    const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    if (e.key === "/" && !typing && !body.classList.contains("chat-open")) { e.preventDefault(); open(); }
+    if (e.key === "Escape" && body.classList.contains("chat-open")) close();
+  });
+  document.querySelectorAll(".ask").forEach(b => {
+    b.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>');
+    b.setAttribute("aria-label", "Ask the assistant: " + b.dataset.q);
+    b.addEventListener("click", () => open(b.dataset.q));
+  });
+
+  qEl.addEventListener("input", () => { send.disabled = !qEl.value.trim(); qEl.style.height = "auto"; qEl.style.height = Math.min(qEl.scrollHeight, 120) + "px"; });
+  qEl.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+  form.addEventListener("submit", e => { e.preventDefault(); const q = qEl.value.trim(); if (!q) return; qEl.value = ""; qEl.dispatchEvent(new Event("input")); ask(q); });
+  log.addEventListener("click", e => {
+    const p = e.target.closest("[data-q]"); if (p) return ask(p.dataset.q);
+    const j = e.target.closest("[data-jump]"); if (j) jump(j.dataset.jump);
+  });
+
+  const jump = id => {
+    const el = document.getElementById(id) || document.querySelector(id); if (!el) return;
+    if (!docked()) close();
+    const d = el.closest("details"); if (d) d.open = true;
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+    }, docked() ? 0 : 260);
+  };
+
+  const add = (cls, html) => { const m = document.createElement("div"); m.className = "msg " + cls; m.innerHTML = html; log.appendChild(m); log.scrollTop = log.scrollHeight; return m; };
+
+  function ask(q) {
+    add("user", esc(q));
+    const t = add("bot", '<span class="typing" aria-label="Thinking"><i></i><i></i><i></i></span>');
+    setTimeout(() => { t.innerHTML = answer(q); log.scrollTop = log.scrollHeight; }, 380);
+  }
+
+  function answer(q) {
+    const qt = qTokens(q), wantsEx = /example|industry|company|companies|real[- ]world|case/i.test(q);
+    const ranked = docs.map(d => ({ d, s: bm25(qt, d) * (wantsEx && d.isEx ? 1.6 : 1) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
+    const dx = diagnose(q);
+    let html = "";
+
+    if (dx) {
+      const [name, cls, anchor, fws] = TYPE[dx.k];
+      const art = dx.k === "eng" ? "an" : "a";
+      html += `<div class="diag ${cls}"><b>This sounds like ${art} ${name.toLowerCase()}.</b> Clues: ${dx.hits.map(h => "“" + esc(h) + "”").join(", ")}.<br>Frameworks to try: ${esc(fws)}.</div>`;
+      const sig = docs.find(d => d.title === name + ": signals in the data");
+      const top = ranked.find(r => r.d.type === dx.k && r.d.el.closest(".fw") && !r.d.isEx)
+        || ranked.find(r => r.d.type === dx.k && !/signals|what users say|ethics/i.test(r.d.title));
+      if (top) html += block(top.d, q, 2);
+      html += `<div class="acts"><button class="pill primary" data-jump="${anchor.slice(1)}">Open ${esc(name)} ↗</button>${sig ? `<button class="pill" data-jump="${sig.id}">See the signals</button>` : ""}</div>`;
+      return html;
+    }
+
+    if (!ranked.length || ranked[0].s < 1.1) {
+      return `<div class="src">Not in this guide</div><p>I couldn't find that on this page. I can only answer from the guide's content. Try asking about a framework, an industry example, metrics, prototype fidelity, or the class exercise.</p>
+        <div class="acts">${SUGG.slice(0, 3).map(s => `<button class="pill" data-q="${esc(s)}">${esc(s)}</button>`).join("")}</div>`;
+    }
+
+    const top = ranked[0], compare = /\b(differ\w*|vs|versus|compar\w*)\b/i.test(q);
+    html += block(top.d, q, 3);
+    let second = null;
+    if (compare) second = ranked.find(r => r.d !== top.d && r.d.el.closest(".fw") !== top.d.el.closest(".fw") && !r.d.isEx && r.s > top.s * .2);
+    if (second) html += `<hr style="border:0;border-top:1px solid var(--hair);margin:10px 0">` + block(second.d, q, 3);
+
+    const seen = new Set([top.d.title, second && second.d.title]);
+    const exSib = !top.d.isEx && top.d.el.closest(".fw") ? docs.find(d => d.isEx && d.el.closest(".fw") === top.d.el.closest(".fw")) : null;
+    const rel = ranked.filter(r => !seen.has(r.d.title) && r.s > top.s * .6).slice(0, 2);
+    html += `<div class="acts"><button class="pill primary" data-jump="${(top.d.el.closest(".fw") || top.d.el).id}">Jump to section ↗</button>`;
+    if (exSib && !second) html += `<button class="pill" data-q="${esc("Industry example of " + top.d.title)}">Industry example</button>`;
+    rel.forEach(r => { if (!exSib || r.d !== exSib) html += `<button class="pill" data-jump="${r.d.id}">${esc(r.d.title)}</button>`; });
+    html += `</div>`;
+    return html;
+  }
+  function block(d, q, max) {
+    const s = summarise(d, q, max);
+    return `<div class="src">${esc(d.title)}</div>` + s.map(x => `<p>${highlight(esc(x), q)}</p>`).join("");
+  }
+
+  /* ---------------- launcher compacts while reading; side TOC scrollspy ---------------- */
+  let ticking = false;
+  addEventListener("scroll", () => { if (ticking) return; ticking = true; requestAnimationFrame(() => {
+    launcher.classList.toggle("compact", scrollY > 320); ticking = false; }); }, { passive: true });
+  const links = [...document.querySelectorAll(".toc-side a")];
+  const targets = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  const spy = new IntersectionObserver(ents => {
+    ents.forEach(en => { if (en.isIntersecting) { links.forEach(l => l.classList.toggle("active", l.getAttribute("href") === "#" + en.target.id)); } });
+  }, { rootMargin: "-20% 0px -70% 0px" });
+  targets.forEach(t => spy.observe(t));
+})();
+</script>
+</body>
+</html>
